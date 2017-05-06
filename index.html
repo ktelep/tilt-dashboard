@@ -1,0 +1,567 @@
+<!doctype html>
+<html><head>
+    <meta charset="utf-8">
+    <title>TiLT-Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Carlos Alvarez - Alvarez.is">
+
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css" />
+
+    <link href="css/main.css" rel="stylesheet">
+    <link href="css/font-style.css" rel="stylesheet">
+    <link href="css/flexslider.css" rel="stylesheet">
+
+    <script type="text/javascript" src="js/jquery.js"></script>    
+    <script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+
+	<script type="text/javascript" src="http://code.highcharts.com/highcharts.js"></script>
+	<script src="js/jquery.flexslider.js" type="text/javascript"></script>
+
+    <script type="text/javascript" src="js/admin.js"></script>
+     
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+      }
+    </style>
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+   
+
+  	<!-- Google Fonts call. Font Used Open Sans & Raleway -->
+	<link href="http://fonts.googleapis.com/css?family=Raleway:400,300" rel="stylesheet" type="text/css">
+  	<link href="http://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
+
+ </head>
+  <body>
+  
+    <div class="container">
+
+	  <!-- FIRST ROW OF BLOCKS -->     
+      <div class="row">
+
+	      <!-- Tilt sessions/hour -->
+        <div class="col-sm-4 col-lg-4">
+      		<div class="dash-unit">
+	      		<dtitle>TiLT/Hour</dtitle>
+	      		<hr>
+                        <div class="section-graph">
+			            <div id="tilt_hour">
+                </div>
+                        </div>
+		</div>
+        </div>
+
+      <!-- DONUT CHART BLOCK -->
+        <div class="col-sm-4 col-lg-4">
+      		<div class="dash-unit">
+		  		<dtitle>Active TiLT and Bandwidth</dtitle>
+		  		<hr>
+                <div class="section-graph">
+	        	<div id="tilt_bw"></div>
+                </div>
+			</div>
+        </div>
+
+      <!-- DONUT CHART BLOCK -->
+        <div class="col-sm-4 col-lg-4">
+      		<div class="dash-unit">
+		  		<dtitle>Active Shake Rate</dtitle>
+		  		<hr>
+                <div class="section-graph" id="active_variance">
+                </div>
+                <div class="graph-info">&nbsp;<br><br></div>
+                <div class="graph-info">
+	        	<h2><span id="shake_rate"></span></h2>
+                </div>
+			</div>
+        </div>
+        
+      </div><!-- /row -->
+     
+      <div class="row"> 
+
+      <!-- USER PROFILE BLOCK -->
+        <div class="col-sm-4 col-lg-4">
+      		<div class="dash-unit">
+	      		<dtitle>Industry vs. Shake Rate Ranking</dtitle>
+	      		<hr>
+                    <table class="table" id="industry_table">
+                        <thead><tr>
+                        <td><b>Industry</b></td><td style="text-align: right"><b>Average Shake Rate</b></td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                           <td>Technology</td><td> 10</td>
+                           </tr>
+                           <tr>
+                           <td>Frming</td><td> 20 </td>
+                           </tr>
+                           </tbody>
+                           </table>
+
+		</div>
+        </div>
+
+      <!-- DONUT CHART BLOCK -->
+        <div class="col-sm-4 col-lg-4">
+      		<div class="half-unit">
+		  		<dtitle>Datapoints Processed by Active Tilt Servers</dtitle>
+		  		<hr>
+                                <div class="cont"><span class="datapoints" id="data_points"></span></div>
+		</div>
+      		<div class="half-unit">
+		  		<dtitle>Data Points from Active Tilt Devices</dtitle>
+		  		<hr>
+                <div class="cont"><span class="datapoints" id="data_points_active"></span></div>
+		</div>
+        </div>
+
+      <!-- DONUT CHART BLOCK -->
+        <div class="col-sm-4 col-lg-4">
+      		<div class="dash-unit">
+		  		<dtitle>Handedness</dtitle>
+		  		<hr>
+                        <div class="section-graph">
+			    <div id="chart_handedness"></div>
+                        </div>
+        </div>
+        
+      
+    </div><!-- /container -->		
+              
+</body>
+
+<script>
+
+var data_url = 'https://tilt-cruncher.local.pcfdev.io'
+
+function sortByKey(array, key) {
+    return array.sort(function(a, b) {
+        var x = a[key]; var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+    });
+}
+
+function update_industry_table() {
+    var info_url = data_url + '/industry_shake';
+    $.getJSON(info_url, function(data) {
+        var newobj = new Object;
+        var value_arr = new Array;
+        var content = "";
+        var industry_count = 0;
+          
+        $.each(data['data'], function(industry) {
+            newobj[industry] = parseFloat(data['data'][industry]);
+            value_arr.push(parseFloat(data['data'][industry])) 
+        });
+        value_arr = value_arr.sort(function(a, b){return b-a});
+        console.log(value_arr);
+        $.each(value_arr, function(score) {
+            $.each(newobj, function(industry) {
+                if (industry_count < 7) {
+                    if (newobj[industry] == value_arr[score]) {
+                        content = content + "<tr><td>";
+                        content = content + industry;
+                        content = content + "</td><td style=\"text-align: right\">";
+                        content = content + parseFloat(data['data'][industry]).toFixed(2);
+                        content = content + "</td></tr>";
+                        industry_count++;
+                    }
+                }
+            });
+        });
+        
+        $("#industry_table tbody").html(content);
+
+        console.log(newobj)
+    });
+}
+
+function update_data_points() {
+    var chart_data_url = data_url + '/tilt_server_stats';
+    var total = 0;
+
+    $.getJSON(chart_data_url, function(data) {
+        //console.log(data);
+        $.each( data['data']['servers'], function ( server ) {
+            total = total + parseInt(data['data']['servers'][server])
+            });
+        $('#data_points').text(total);
+        $('#data_points_active').text(data['data']['active']);
+        });
+}
+
+
+function update_hand_chart() {
+    var chart_data_url = data_url + '/active_latest';
+    var right = 0;
+    var left = 0;
+    $.getJSON(chart_data_url, function(data) {
+        $.each( data['data'], function( devid ) {
+            //console.log(data['data'][devid]['Hand'])
+            if (data['data'][devid]['Hand'] == "Right") {
+                right++;
+            } else {
+                left++;
+            }
+        });
+        hand_chart.series[0].setData([left,right]);
+    });
+    }
+
+function update_hourly_chart() {
+    var chart_data_url = data_url + '/tilt_hour/6'
+    $.getJSON(chart_data_url, function(data) {
+        var chart_data = []; 
+        $.each( data['data'], function( stamp, value ) {
+             chart_data.push(value);
+        });
+        tilt_hour.series[0].setData(chart_data);
+        //console.log(data);
+	//console.log(chart_data);
+    });
+}
+
+
+function update_variance_chart() {
+    var chart_data_url = data_url + '/active_variance'
+    $.getJSON(chart_data_url, function(data) {
+        var chart_data = []; 
+        var total = 0
+        var count = 0
+        $.each( data['data'], function( devid  ) {
+             total = total + parseFloat(data['data'][devid]["TiltLR"]);
+             count++;
+        });
+
+        average = total/count;
+        // Assume 500 is a good number to start?
+        pct = average/500
+        variance_chart.series[0].setData([["Shake",pct],["",1-pct]]);
+        $('#shake_rate').text(average.toFixed(2))
+    });
+}
+
+var last_bw_value = 0;
+function update_bandwidth_chart() {
+    var chart_data_url = data_url + '/active_latest'
+    $.getJSON(chart_data_url, function(data) {
+        var total = 0
+        var tcount = 0
+        //console.log(data)
+        $.each( data['data'], function( devid  ) {
+             total = total + parseFloat(data['data'][devid]["TotalBW"]);
+             tcount++;
+        });
+        //console.log(total)
+        if (last_bw_value == 0) {
+            last_bw_value = total;
+        } else {
+            val_to_add = total - last_bw_value
+            if (val_to_add > 0) {
+                if (bandwidth.series[0].xData.length > 15) {
+                    bandwidth.series[0].addPoint(val_to_add,false,true)
+                    bandwidth.series[1].addPoint(tcount,false,true)
+                } else {
+                    bandwidth.series[0].addPoint(val_to_add,false,false)
+                    bandwidth.series[1].addPoint(tcount,false,false)
+                }
+                bandwidth.redraw();
+            }
+            last_bw_value = total;
+        }
+    });
+}
+
+
+var hourly_categories = ["-5","-4","-3","-2","-1","Current"];
+var hourly_series = [];
+
+var categories = ["Left","Right"];
+var serie1 = [0,0];
+
+$(document).ready(function() {
+
+    // Setup Bandwidth Chart
+    bandwidth = new Highcharts.Chart({
+       chart: {
+         renderTo: 'tilt_bw',
+         type: 'line',
+         backgroundColor: 'transparent',
+         height: 250,
+        },
+        title: {
+           text: ''
+           },
+       xAxis: {
+        visible: true,
+        lineWidth: 1,
+        tickWidth: 0,
+        labels: { 
+          enabled: false,
+          style: {
+            color: '#FFF',
+          }
+        },
+      },
+      yAxis: [{
+        visible: true,
+        labels: { 
+          enabled: true 
+        },
+        gridLineWidth: 0,
+        title: {
+          text: null,
+        }},{
+        opposite: true,
+        labels: { 
+          enabled: true 
+        },
+        min: 0,
+        max: 20,
+        gridLineWidth: 0,
+        title: {
+          text: null,
+        }}]
+      ,
+      series: [{
+        name: 'Bandwidth',
+        data: [0,1,2],
+        yAxis: 0,
+      },
+      { name: 'Users',
+        data: [0,0,0],
+        yAxis: 1,
+        color: '#b2c831',
+      }],
+      credits: { 
+        enabled: false 
+      },
+      legend: { 
+        enabled: true,
+        float: true,
+        y: 24,
+        itemStyle: {
+           color: '#FFF',
+        },           
+      },
+      plotOptions: {
+        series: {
+          dataLabels: { 
+              enabled: false,
+              style: { 
+                  color: '#FFF',
+                  textOutline: false, 
+                  fontweight: 'bold'
+              }
+          }
+        },
+      },
+      tooltip: { 
+        enabled: true
+      }
+    });
+
+
+
+	// Setup Hourly Chart
+    tilt_hour = new Highcharts.Chart({
+      chart: {
+        renderTo: 'tilt_hour',
+        type: 'column',
+        backgroundColor: 'transparent',
+        height: 240,
+        marginLeft: 3,
+        marginRight: 3,
+        marginTop: 0
+      },
+      title: {
+        text: ''
+      },
+      xAxis: {
+        visible: true,
+        lineWidth: 1,
+        tickWidth: 0,
+        labels: { 
+          enabled: true,
+          style: {
+            color: '#FFF',
+          }
+        },
+        categories: hourly_categories,
+      },
+      yAxis: {
+        labels: { 
+          enabled: true 
+        },
+        gridLineWidth: 0,
+        title: {
+          text: null,
+        },
+      },
+      series: [{
+        name: 'Count',
+        data: hourly_series
+      }],
+      credits: { 
+        enabled: false 
+      },
+      legend: { 
+        enabled: false
+      },
+      plotOptions: {
+        column: {
+          borderWidth: 0,
+          color: '#b2c831',
+          shadow: false,
+        },
+        series: {
+          dataLabels: { 
+              enabled: true,
+              style: { 
+                  color: '#FFF',
+                  textOutline: false, 
+                  fontweight: 'bold'
+              }
+          }
+        },
+      },
+      tooltip: { 
+        enabled: false
+      }
+    });
+
+    // Variance Donut
+    variance_chart = new Highcharts.Chart({
+      chart: {
+        renderTo: 'active_variance',
+        type: 'pie',
+        backgroundColor: 'transparent',
+        height: 200,
+        marginLeft: 3,
+        marginRight: 3,
+        marginTop: 0
+        },
+
+        title: {
+          text: ''
+        },
+        plotOptions: {
+           pie: {
+               borderColor: '#000000',
+               innerSize: '60%',
+               datalabels: {
+                   enabled: false
+                   },
+               allowPointSelect: true,
+               cursor: 'pointer',
+                   dataLabels: {
+                       enabled: false,
+                   },
+               startAngle: -90, 
+               }
+               
+        },
+        series: [{
+            data: [
+               ['Shake',50],
+               ['',50]
+             ]
+        }],
+        });
+
+
+    // Handedness chart
+    hand_chart = new Highcharts.Chart({
+      chart: {
+        renderTo: 'chart_handedness',
+        type: 'column',
+        backgroundColor: 'transparent',
+        height: 240,
+        marginLeft: 3,
+        marginRight: 3,
+        marginTop: 0
+      },
+      title: {
+        text: ''
+      },
+      xAxis: {
+        visible: true,
+        lineWidth: 1,
+        tickWidth: 0,
+        labels: { 
+          enabled: true,
+          style: {
+            color: '#FFF',
+          }
+        },
+        categories: categories,
+        title: "Test",
+      },
+      yAxis: {
+        labels: { 
+          enabled: true 
+        },
+        gridLineWidth: 0,
+        title: {
+          text: null,
+        },
+        max: 16,
+      },
+      series: [{
+        name: 'Hand',
+        data: serie1
+      }],
+      credits: { 
+        enabled: false 
+      },
+      legend: { 
+        enabled: false
+      },
+      plotOptions: {
+        column: {
+          borderWidth: 0,
+          color: '#b2c831',
+          shadow: false
+        },
+        series: {
+          dataLabels: { 
+              enabled: true,
+              style: { 
+                  color: '#FFF',
+                  textOutline: false, 
+                  fontweight: 'bold'
+              }
+          }
+        },
+      },
+      tooltip: { 
+        enabled: false
+      }
+    });
+
+
+    // Initial Hourly update, then setting interval
+    update_hourly_chart()
+    window.setInterval(update_hourly_chart, 60000);
+
+    // Hand Chart Updates
+    window.setInterval(update_hand_chart, 1000);
+
+    // Tilters and bandwidth update
+    window.setInterval(update_bandwidth_chart, 1000);
+    window.setInterval(update_industry_table, 1000);
+    window.setInterval(update_data_points, 1000);
+
+    // Donuts need time to render first before we start intervals
+    window.setTimeout(function() { window.setInterval(update_variance_chart, 1000) }, 2000);
+});
+
+</script>
+</html>

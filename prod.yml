@@ -1,0 +1,7 @@
+---
+# Manifest for tilt demo application
+# Kurt Telep
+applications:
+- name: tilt_dashboard
+  scale: 1
+  memory: 128MB
